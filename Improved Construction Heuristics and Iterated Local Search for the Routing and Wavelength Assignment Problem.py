@@ -126,7 +126,7 @@ def Shift_paths(order, tasks, Graphs, require, load, LightPath):
         can_route   = []             # 存储连接请求的路径
         task        = tasks[order[id]]
         now_w       = LightPath[id][1]
-        for w in range(len(W)):
+        for w in range(len(Graphs)):
             if w in reduce_wave:
                 continue
             G = Graphs[w]
@@ -165,7 +165,7 @@ def Shift_paths(order, tasks, Graphs, require, load, LightPath):
     return Graphs, LightPath, load, require, reduce_wave
 
 # 随机选择两个波长层，将使用链路较少的波长层中的连接请求的路径移到使用链路较多的波长层中，并将发生冲突的链路所对应的连接请求重新路由。
-def Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath):
+def Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath, nodes, edges):
     """
     :param        order: 任务连接请求序号
     :param        tasks: 任务连接请求
@@ -174,6 +174,8 @@ def Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath):
     :param         load: 每个波长层的负载数
     :param  reduce_wave: 可简化的波长
     :param    LightPath: 存储每条路径所及其所对应的波长
+    :param        nodes: 结点序列
+    :param        edges: 边序列
     :return:     Graphs: 每一个波长层的剩余边连接关系
               LightPath: 存储每条路径所及其所对应的波长
                    load: 每个波长层的负载数
@@ -185,90 +187,97 @@ def Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath):
         waves.remove(wave)
     if len(waves) < 2:
         return Graphs, LightPath, load, require, reduce_wave
-    w_1, w_2 = list(np.random.choice(waves), 2, replace=False)  # 随机选择两个波长层
+    w_1, w_2 = np.random.choice(waves, 2, replace=False)  # 随机选择两个波长层
     if load[w_1] < load[w_2]:
         w_1, w_2 = w_2, w_1
     r_2 = require[w_2]  # 链路较少的波长层中的连接请求
     out_path_index = random.choice(r_2)  # 在链路较少的波长层中随机选择一个连接请求
-    index = order.index(out_path_index)
-    out_path = LightPath[index][0]     # 所选择连接请求的路径
-    out_edge = []  # 存储所选择连接请求的路径中的边
+    out_index = order.index(out_path_index)
+    out_path = LightPath[out_index][0]     # 所选择连接请求的路径
+    out_edge = {}  # 存储所选择连接请求的路径中的边
     for apk in range(len(out_path) - 1):
         if out_path[apk] < out_path[apk + 1]:
             e = (out_path[apk], out_path[apk + 1])
         else:
             e = (out_path[apk + 1], out_path[apk])
-        out_edge.append(e)
+        out_edge[e] = True
         Graphs[w_2].add_edges_from([(e[0], e[1])])
         Graphs[w_2].add_edges_from([(e[1], e[0])])
+
     load[w_2] = load[w_2] - len(out_path) + 1
-    if load[w_2] == 0:
-        reduce_wave.append(w_2)
-    r_1 = require[w_1] # 链路较多的波长层中的连接请求
+    require[w_2].remove(out_path_index)
+
+    r_1 = require[w_1].copy() # 链路较多的波长层中的连接请求
+
     R   = []
-    for r in r_1:
+    for i in range(len(r_1)):
+        r = r_1[i]
+        conflict = False
         index = order.index(r)
-        path  =
-
-            now_edge = []
-            for apk in range(len(LightPath[2 * id]) - 1):
-                if LightPath[2 * id][apk][0] < LightPath[2 * id][apk + 1][0]:
-                    edge = (LightPath[2 * id][apk][0], LightPath[2 * id][apk + 1][0])
-                else:
-                    edge = (LightPath[2 * id][apk + 1][0], LightPath[2 * id][apk][0])
-                now_edge.append(edge)
-            for i in out_edge:
-                if i in now_edge:
-                    R.append(id)
-                    load[w_1] = load[w_1] - LightPath[2 * id][-1][1]
-                    for j in now_edge:
-                        W[w_1].append(j)
-                    break
-    LightPath[2 * out_path_index + 1] = w_1
-    load[w_1] = load[w_1] + out_path[-1][1]
-    for apk in range(len(out_path) - 1):
-        if out_path[apk][0] < out_path[apk + 1][0]:
-            edge = (out_path[apk][0], out_path[apk + 1][0])
-        else:
-            edge = (out_path[apk + 1][0], out_path[apk][0])
-        W[w_1].remove(edge)
-    for id in R:
-        for w in range(len(W)):
-            node_map = [[0 for v in range(len(nodes))] for v in range(len(nodes))]
-            set_node_map(node_map, nodes, W[w])
-            dijkstrapath = Dijkstra_Path(node_map)
-            path = dijkstrapath(K[order[id]][0], K[order[id]][1])
-            now_val = path[-1][1]
-            if now_val < val:
-                load[w] = load[w] + now_val
-                LightPath[2 * id] = path
-                LightPath[2 * id + 1] = w
-                for apk in range(len(path) - 1):
-                    if path[apk][0] < path[apk + 1][0]:
-                        edge = (path[apk][0], path[apk + 1][0])
-                    else:
-                        edge = (path[apk + 1][0], path[apk][0])
-                    W[w].remove(edge)
+        path  = LightPath[index][0]  # 链路较多的波长层中的连接请求对应路径
+        for apk in range(len(path) - 1):
+            if path[apk] < path[apk + 1]:
+                e = (path[apk], path[apk + 1])
+            else:
+                e = (path[apk + 1], path[apk])
+            if e in out_edge:
+                conflict = True
+                R.append(r)
+                require[w_1].remove(r)
+                load[w_1] = load[w_1] - len(path) + 1
                 break
-            elif w == len(W) - 1:
-                w_edges = edges[:]
-                node_map = [[0 for v in range(len(nodes))] for v in range(len(nodes))]
-                set_node_map(node_map, nodes, w_edges)
-                dijkstrapath = Dijkstra_Path(node_map)
-                path = dijkstrapath(K[order[id]][0], K[order[id]][1])
-                LightPath.append(path)
-                LightPath.append(w + 1)
+        if conflict:
+            for apk in range(len(path) - 1):
+                e = (path[apk], path[apk + 1])
+                Graphs[w_1].add_edges_from([(e[0], e[1])])
+                Graphs[w_1].add_edges_from([(e[1], e[0])])
+
+    LightPath[out_index] = (out_path, w_1)
+    load[w_1] = load[w_1] + len(out_path) - 1
+    require[w_1].append(out_path_index)
+    for apk in range(len(out_path) - 1):
+        e = (out_path[apk + 1], out_path[apk])
+        Graphs[w_1].remove_edge(e[0], e[1])
+        Graphs[w_1].remove_edge(e[1], e[0])
+
+    for r in R:
+        index = order.index(r)
+        task  = tasks[index]   # 该连接请求所对应的任务
+        can_route = False
+        for w in waves:
+            if w == w_1:
+                continue
+            G = Graphs[w]
+            exist_path, path = has_path(G, task)
+            if exist_path:
+                load[w] = load[w] + len(path) - 1
+                can_route = True
+                LightPath[index] = (path, w)
                 for apk in range(len(path) - 1):
-                    if path[apk][0] < path[apk + 1][0]:
-                        edge = (path[apk][0], path[apk + 1][0])
-                    else:
-                        edge = (path[apk + 1][0], path[apk][0])
-                    w_edges.remove(edge)
-                W.append(w_edges)
-                load.append(path[-1][1])
-
-    return W, LightPath, load
-
+                    e = (path[apk + 1], path[apk])
+                    Graphs[w].remove_edge(e[0], e[1])
+                    Graphs[w].remove_edge(e[1], e[0])
+                break
+        if can_route == False:
+            Graph = nx.DiGraph()
+            for i in range(len(nodes)):
+                Graph.add_node(nodes[i])
+            for x, y in edges:  # edges
+                Graph.add_edges_from([(x, y)])
+                Graph.add_edges_from([(y, x)])
+            Graphs.append(Graph.copy())
+            G = Graphs[-1]
+            path = nx.shortest_path(G, source=task[0], target=task[1])
+            LightPath[index] = (path, len(Graphs) - 1)
+            require.append([])
+            load.append(0)
+            load[-1] = load[-1] + len(path) - 1
+            require[-1].append(index)
+            for apk in range(len(path) - 1):
+                e = (path[apk], path[apk + 1])
+                Graphs[-1].remove_edge(e[0], e[1])
+                Graphs[-1].remove_edge(e[1], e[0])
+    return Graphs, LightPath, load, require, reduce_wave
 
 
 if __name__ == "__main__":
@@ -295,24 +304,18 @@ if __name__ == "__main__":
 
         Graphs, LightPath, load, require, reduce_wave = Shift_paths(order, tasks, Graphs, require, load, LightPath)
         if len(Graphs) >= 2:
-            W, LightPath, load = ils(order, K, W, load, nodes, LightPath)
-        time2 = time.time()
-        print(time2, time1)
-        b.append(time2 - time1)
-
+            Graphs, LightPath, load, require, reduce_wave = Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath, nodes, edges)
+        end_time = time.time()  # 求解终止时间
+        # print(end_time, start_time)
+        times.append(end_time - start_time)
         ns = 0
-        for i in range(len(LightPath) // 2):
-            ns = len(LightPath[2 * i]) + ns - 1
-        a.append(ns)
+        for i in range(len(LightPath)):
+            ns = len(LightPath[i][0]) + ns - 1
+        wave_link_length.append(ns)
 
-        an = 0
-        for i in W:
-            if len(i) < len(edges):
-                an += 1
-            elif len(i) > len(edges):
-                an = INF_val
-        print(an)
-        c.append(an)
-    print(a)
-    print(b)
-    print(c)
+        wave_num.append(len(Graphs) - len(reduce_wave))
+    print(wave_link_length)
+    print(sum(wave_link_length))
+    print(sum(times))
+    print(wave_num)
+    print(sum(wave_num))

@@ -20,242 +20,260 @@ import matplotlib.pyplot as plt
 
 ## 表示无穷大
 INF_val = float("inf")
+def generator_task(task_num, node_nums):
+    """
+    :param task_num  : 需要生成的任务数
+    :param node_nums : 图中结点数量
+    :return: tasks   : 生成的任务连接请求
+    """
+    tasks = []
+    for _ in range(task_num):
+        task = random.sample(range(node_nums), 2)
+        tasks.append((task[0], task[1]))
+    tasks_array = np.array(tasks)
+    return tasks_array
 
+# 判断任务请求在图G中是否存在路径, 若存在返回对应路径
+def has_path(G, task):
+    """
+    :param G:     图
+    :param task: 任务请求
+    :return:  path:路径
+    """
+    try:
 
-class Dijkstra_Path():
-    def __init__(self, node_map):
-        self.node_map = node_map
-        self.node_length = len(node_map)
-        self.used_node_list = []
-        self.collected_node_dict = {}
+        path = nx.shortest_path(G, source=task[0], target=task[1])
 
-    def __call__(self, from_node, to_node):
-        self.from_node = from_node
-        self.to_node = to_node
-        self._init_dijkstra()
-        return self._format_path()
+    except nx.NetworkXNoPath:
+        return False, None
+    return True, path
 
-    def _init_dijkstra(self):
-        ## Add from_node to used_node_list
-        self.used_node_list.append(self.from_node)
-        for index1 in range(self.node_length):
-            self.collected_node_dict[index1] = [INF_val, -1]
+def has_weight_path(G, task):
+    """
+       :param G:     图
+       :param task: 任务请求
+       :return:  exist: 判断是否存在路径
+    """
 
-        self.collected_node_dict[self.from_node] = [0, -1]  # from_node don't have pre_node
-        for index1, weight_val in enumerate(self.node_map[self.from_node]):
-            if weight_val:
-                self.collected_node_dict[index1] = [weight_val, self.from_node]  # [weight_val, pre_node]
-        self._foreach_dijkstra()
+    try:
 
-    def _foreach_dijkstra(self):
-        while (len(self.used_node_list) < self.node_length - 1):
-            min_key = -1
-            min_val = INF_val
-            for key, val in self.collected_node_dict.items():  # 遍历已有权值节点
-                if val[0] < min_val and key not in self.used_node_list:
-                    min_key = key
-                    min_val = val[0]
+        path = nx.dijkstra_path(G, source=task[0], target=task[1])
 
-                    ## 把最小的值加入到used_node_list
-            if min_key != -1:
-                self.used_node_list.append(min_key)
-            else:
-                return [(self.from_node, INF_val)]
+    except nx.NetworkXNoPath:
+        return False, None
+    return True, path
 
-            for index1, weight_val in enumerate(self.node_map[min_key]):
-                ## 对刚加入到used_node_list中的节点的相邻点进行遍历比较
-                if weight_val > 0 and self.collected_node_dict[index1][0] > weight_val + min_val:
-                    self.collected_node_dict[index1][0] = weight_val + min_val  # update weight_val
-                    self.collected_node_dict[index1][1] = min_key
-
-    def _format_path(self):
-        node_list = []
-        temp_node = self.to_node
-        node_list.append((temp_node, self.collected_node_dict[temp_node][0]))
-        while self.collected_node_dict[temp_node][1] != -1:
-            temp_node = self.collected_node_dict[temp_node][1]
-            node_list.append((temp_node, self.collected_node_dict[temp_node][0]))
-        node_list.reverse()
-        return node_list
-
-
-def set_node_map(node_map, node, node_list):
-    for x, y in node_list:
-        node_map[node.index(x)][node.index(y)] = node_map[node.index(y)][node.index(x)] = 1
-
-
-def set_node_map_1(node_map, node, node_list):
-    for x, y, z in node_list:
-        node_map[node.index(x)][node.index(y)] = node_map[node.index(y)][node.index(x)] = z
-
-
-def LEEP(order, Path, edges):
-    global can_route, w
-    LightPath = []
-    W = [edges[:]]
-    require = [[]]
-    for path in range(len(Path)):
-        Edge = []
-        for apk in range(len(Path[path]) - 1):
-            if Path[path][apk][0] < Path[path][apk + 1][0]:
-                edge = (Path[path][apk][0], Path[path][apk + 1][0])
-            else:
-                edge = (Path[path][apk + 1][0], Path[path][apk][0])
-            Edge.append(edge)
-        for w in range(len(W)):
-            can_route = True
-            for e in Edge:
-                if e not in W[w]:
-                    can_route = False
-                    break
-            if can_route == True:
-                LightPath.append(Path[path])
-                LightPath.append(w)
-                require[w].append(order[path])
-                for e in Edge:
-                    W[w].remove(e)
-                break
-        if can_route == False:
-            w_edges = edges[:]
-            LightPath.append(Path[path])
-            LightPath.append(w + 1)
-            require.append([order[path]])
-            for e in Edge:
-                w_edges.remove(e)
-            W.append(w_edges)
-
-    return W, LightPath, require
-
-
-def shunxu(K, edges, nodes):
-    node_map = [[0 for v in range(len(nodes))] for v in range(len(nodes))]
-    set_node_map(node_map, nodes, edges)
-    num = []
-    Paths = []
-    for i in K:
-        dijkstrapath = Dijkstra_Path(node_map)
-        path = dijkstrapath(i[0], i[1])
-        num.append(path[-1][1])
-        Paths.append(path)
-    order = sorted(num)[::-1]
-    Path = copy.deepcopy((Paths))
+# 得到连接请求的最短路径, 并按照降序进行排列
+def Paths_order(tasks, G):
+    """
+    :param   tasks: 任务请求
+    :param       G: 图的结构信息
+    :return: order: 任务连接请求按照最短路径的降序排列
+             Paths: 每个任务连接请求的对应最短路径
+    """
+    num = []      # 存储每个连接请求的最短路径数值
+    Paths = []    # 存储每个连接请求的最短路径
+    task_num = len(tasks) # 任务请求数量
+    for i in range(task_num):
+        task = tasks[i]
+        exist_path, path = has_path(G, task)
+        if exist_path:
+          num.append(len(path)-1)
+          Paths.append(path)
+        else:  #找不到最短路径
+            num.append(0)
+            Paths.append([0])
+    order = sorted(range(len(num)), key=lambda k: num[k], reverse=True)  #每个连接请求的最短路径按长度降序排列, 存储对应的任务请求序号
+    Path = copy.deepcopy(Paths)
     for i in range(len(order)):
-        order[i] = num.index(order[i])
         Path[i] = Paths[order[i]]
-        num[order[i]] = 0
 
     return order, Path
 
+def LFFP(tasks, edges, nodes):
+    """
+    :param          tasks: 任务请求序列
+    :param          edges: 边序列
+    :param          nodes: 结点序列
+    :return:       Graphs: 每个波长层中剩余图的结构信息
+             Occupathions: 每个波长层中边的占用情况
+                LightPath: 存储每条路径所及其所对应的波长
+                    order: 任务请求的降序排列顺序
+                  require: 存储每个波长层中的连接请求
+    """
+    can_route = True  # 标识路径在该波长层中是否存在
+    w = 0             # 标识波长层序号
+    LightPath = []    # 存储每个连接请求的路径及其对应的波长层
+    Occupathions = [] # 存储每个波长层中边的占用情况
+    occupathion  = {}
+    for e in edges[:]:
+        occupathion[e] = False
+    Occupathions.append(occupathion.copy())
+    Graphs = []
+    Graph = nx.DiGraph()
+    for i in range(len(nodes)):
+        Graph.add_node(nodes[i])
+    for x, y in edges:  # edges:
+        Graph.add_edges_from([(x, y)])
+        Graph.add_edges_from([(y, x)])
+    Graphs.append(Graph.copy())
+    require = [[]]
+    order, Path = Paths_order(tasks, Graph)
+    for i in range(len(Path)):
+        path = Path[i]
+        Edge = [] # 存储路径中所设计的边
+        for apk in range(len(path) - 1):
+            if path[apk] < path[apk + 1]:
+                edge = (path[apk], path[apk + 1])
+            else:
+                edge = (path[apk + 1], path[apk])
+            Edge.append(edge)
+        for w in range(len(Occupathions)):
+            can_route = True
+            # 判断该连接请求的最短路径是否存在当前的波长层中
+            for e in Edge:
+                if Occupathions[w][e]:
+                    can_route = False
+                    break
+            if can_route == True: # 分配波长
+                LightPath.append((path, w)) # 记录每条路径对应的波长层
+                require[w].append(order[i]) # 记录每个波长层所分配的任务请求
+                for e in Edge:
+                   Occupathions[w][e] = True
+                   Graphs[w].remove_edge(e[0], e[1])
+                   Graphs[w].remove_edge(e[1], e[0])
+                break
+        if can_route == False: # 如果当前所有波长层都无法路由，就添加新的波长层
+            Occupathions.append(occupathion.copy())
+            Graphs.append(Graph.copy())
+            LightPath.append((path, w+1))
+            require.append([order[i]])
+            for e in Edge:
+                Occupathions[-1][e] = True
+                Graphs[-1].remove_edge(e[0], e[1])
+                Graphs[-1].remove_edge(e[1], e[0])
 
-def ls(LightPath, edges, W, require, order):
-    for i in range(len(edges)):
-        edges[i] = (edges[i][0], edges[i][1], 1)
+    return Graphs, Occupathions, LightPath, order, require
+
+
+def Local_Search(tasks, edges, nodes):
+    """
+        :param          tasks: 任务请求序列
+        :param          edges: 边序列
+        :param          nodes: 结点序列
+        :return: Occupathions: 每个波长层中边的占用情况
+                    LightPath: 存储每条路径所及其所对应的波长
+                      require: 存储每个波长层中的连接请求
+    """
+    Graphs, Occupathions, LightPath, order, require = LFFP(tasks, edges, nodes) #利用LFFP分配路径
+    task_num = len(tasks)  # 任务数量
+    edge_num = len(edges)  # 边数量
+    reduce_wave = []  # 存储被简化的波长层
+    edge_sets = []
+    for i in range(task_num):
+        path = LightPath[i][0]
+        for apk in range(len(path) - 1):
+            if path[apk] < path[apk + 1]:
+                edge = (path[apk], path[apk + 1])
+            else:
+                edge = (path[apk + 1], path[apk])
+            edge_sets.append(edge)
+    edge_load = collections.Counter(edge_sets)  # 记录图中边的负载数
     for i in range(1):
         for id in range(len(order)):
-            ag = []
-            for path in range(len(LightPath) // 2):
-                if path == id:
-                    continue
-                for apk in range(len(LightPath[2 * path]) - 1):
-                    if LightPath[2 * path][apk][0] < LightPath[2 * path][apk + 1][0]:
-                        edge = (LightPath[2 * path][apk][0], LightPath[2 * path][apk + 1][0])
-                    else:
-                        edge = (LightPath[2 * path][apk + 1][0], LightPath[2 * path][apk][0])
-                    ag.append(edge)
-            al = collections.Counter(ag)
             p_max = 0
-            for edge in al:
-                if p_max < al[edge]:
-                    p_max = al[edge]
-            for i in range(len(edges)):
-                edges[i] = (edges[i][0], edges[i][1], al[(edges[i][0], edges[i][1])])
-            node_map = [[0 for v in range(len(nodes))] for v in range(len(nodes))]
-            set_node_map_1(node_map, nodes, edges)
-            dijkstrapath = Dijkstra_Path(node_map)
-            path = dijkstrapath(K[order[id]][0], K[order[id]][1])
-            if path[-1][1] == INF_val:
-                continue
-            for apk in range(len(LightPath[2 * id]) - 1):
-                if LightPath[2 * id][apk][0] < LightPath[2 * id][apk + 1][0]:
-                    edge = (LightPath[2 * id][apk][0], LightPath[2 * id][apk + 1][0])
-                else:
-                    edge = (LightPath[2 * id][apk + 1][0], LightPath[2 * id][apk][0])
-                W[LightPath[2 * id + 1]].append(edge)
-            Edge = []
-            for apk in range(len(path) - 1):
-                if path[apk][0] < path[apk + 1][0]:
-                    edge = (path[apk][0], path[apk + 1][0])
-                else:
-                    edge = (path[apk + 1][0], path[apk][0])
-                Edge.append(edge)
-            for w in range(len(W)):
-                can_route = True
-                for e in Edge:
-                    if e not in W[w]:
-                        can_route = False
-                        break
-                if can_route == True:
-                    require[LightPath[2 * id + 1]].remove(order[id])
-                    require[w].append(order[id])
-                    LightPath[2 * id] = path
-                    LightPath[2 * id + 1] = w
-                    for e in Edge:
-                        W[w].remove(e)
-                    break
-            if not can_route:
-                for apk in range(len(LightPath[2 * id]) - 1):
-                    if LightPath[2 * id][apk][0] < LightPath[2 * id][apk + 1][0]:
-                        edge = (LightPath[2 * id][apk][0], LightPath[2 * id][apk + 1][0])
+            for e in edge_load:
+                if p_max < edge_load[e]:
+                    p_max = edge_load[e]
+            Graph = nx.DiGraph()
+            for i in range(len(nodes)):
+                Graph.add_node(nodes[i])
+            for e in edges:  # edges:
+                x, y = e[0], e[1]
+                Graph.add_weighted_edges_from([(x, y, edge_load[e])])
+                Graph.add_weighted_edges_from([(y, x, edge_load[e])])
+            task = tasks[order[id]]
+            exist_path, path = has_path(Graph, task)
+            if exist_path:
+               ori_path = LightPath[id][0]
+               ori_w = LightPath[id][1]
+               for apk in range(len(ori_path) - 1):   # 恢复原图中的边
+                  if ori_path[apk] < ori_path[apk+1]:
+                    e = (ori_path[apk], ori_path[apk+1])
+                  else:
+                    e = (ori_path[apk + 1], ori_path[apk])
+                  Occupathions[ori_w][e] = False
+                  Graphs[ori_w].add_edges_from([(e[0], e[1])])
+                  Graphs[ori_w].add_edges_from([(e[1], e[0])])
+               require[ori_w].remove(order[id])
+               if len(require) == 0:
+                   reduce_wave.append(ori_w)
+               Edge = [] # 存储新找到路径中的边
+               for apk in range(len(path) - 1):
+                    if path[apk] < path[apk + 1]:
+                        edge = (path[apk], path[apk + 1])
                     else:
-                        edge = (LightPath[2 * id][apk + 1][0], LightPath[2 * id][apk][0])
-                    W[LightPath[2 * id + 1]].remove(edge)
+                        edge = (path[apk + 1], path[apk])
+                    Edge.append(edge)
+               can_route = True
+               for w in range(len(Graphs)):
+                    if w in reduce_wave:
+                        continue
+                    can_route = True
+                    for e in Edge:
+                       if Occupathions[w][e]:
+                          can_route = False
+                          break
+                    if can_route == True:
+                        require[w].append(order[id])
+                        LightPath[id] = (path, w)
+                        for e in Edge:
+                           Graphs[w].remove_edge(e[0], e[1])
+                           Graphs[w].remove_edge(e[1], e[0])
+                           Occupathions[w][e] = True
+                        break
+               if not can_route:
+                for apk in range(len(ori_path) - 1):
+                    e = (ori_path[apk], ori_path[apk+1])
+                    Graphs[ori_w].remove_edge(e[0], e[1])
+                    Graphs[ori_w].remove_edge(e[1], e[0])
+                if ori_w in reduce_wave:
+                    reduce_wave.remove(ori_w)
+    return Graphs, LightPath, require, reduce_wave
 
-    return W, LightPath, require
 
-
-random.seed(2)
 if __name__ == "__main__":
-    a = []  # 波长链路
-    b = []  # 时间
-    c = []  # 波长
+    # 设置随机种子
+    random.seed(2)
+    np.random.seed(2)
+    wave_link_length = []  # 波长链路数
+    times = []  # 时间
+    wave_num = []  # 波长数
+    node_nums = 14  # 结点数量
+    nodes = np.arange(node_nums)  # 结点序列
+    edges = [(0, 1), (0, 2), (0, 7), (1, 2), (1, 3), (2, 5), (3, 4), (3, 10), (4, 5), (4, 6), (5, 9), (5, 13),
+             (6, 7), (7, 8), (8, 9), (8, 11), (8, 12), (10, 11), (10, 13), (11, 13), (12, 13)]
+    # 边连接关系
+    Max_num_tasks = 200
 
-    for inj in range(200):
+    for task_num in range(1, Max_num_tasks + 1):
+        tasks = generator_task(task_num, node_nums)  # 生成任务
 
-        edges = [(0, 1), (0, 2), (0, 7), (1, 2), (1, 3), (2, 5), (3, 4), (3, 10), (4, 5), (4, 6), (5, 9), (5, 13),
-                 (6, 7), (7, 8), (8, 9), (8, 11), (8, 12), (10, 11), (10, 13), (11, 13), (12, 13)]
-        nodes = range(14)
-        renwushu = inj
-        K = []
-        for vad in range(renwushu):
-            res = random.sample(range(len(nodes)), 2)
-            K.append((res[0], res[1]))
+        start_time = time.time()  # 求解起始时间
 
-        time1 = time.time()
+        Graphs, LightPath, require, reduce_wave = Local_Search(tasks, edges, nodes)
 
-        order, Path = shunxu(K, edges, nodes)
-
-        W, LightPath, require = LEEP(order, Path, edges)
-
-        W, LightPath, require = ls(LightPath, edges, W, require, order)
-
-        time2 = time.time()
-        print(time2, time1)
-        b.append(time2 - time1)
-
+        end_time = time.time()  # 求解终止时间
+        # print(end_time, start_time)
+        times.append(end_time - start_time)
         ns = 0
-        for i in range(len(LightPath) // 2):
-            ns = len(LightPath[2 * i]) + ns - 1
-        a.append(ns)
+        for i in range(len(LightPath)):
+            ns = len(LightPath[i][0]) + ns - 1
+        wave_link_length.append(ns)
 
-        an = 0
-        for i in W:
-            if len(i) < len(edges):
-                an += 1
-            elif len(i) > len(edges):
-                an = INF_val
-        print(an)
-        c.append(an)
-    print(a)
-    print(b)
-    print(c)
-
+        wave_num.append(len(Graphs) - len(reduce_wave))
+    print(wave_link_length)
+    print(sum(wave_link_length))
+    print(sum(times))
+    print(wave_num)
+    print(sum(wave_num))
