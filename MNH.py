@@ -45,8 +45,9 @@ def generator_task(task_num, node_nums):
     :return: tasks   : 生成的任务连接请求
     """
     tasks = []
+    task_index = range(node_nums)
     for _ in range(task_num):
-        task = random.sample(range(node_nums), 2)
+        task = random.sample(task_index, 2)
         tasks.append((task[0], task[1]))
     return tasks
 
@@ -239,12 +240,12 @@ def MNH(tasks, edges):
                    LightPath: 存储每条路径所及其所对应的波长
                      require: 存储每个波长层中的连接请求
     """
-    min_load_path = Min_Load_Paths(tasks, edges) # 得到
+    min_load_path = Min_Load_Paths(tasks, edges) # 得到每个任务连接请求所对应的所有最短路径
 
     num = [len(min_load_path[i]) -1 for i in range(len(min_load_path))]
 
     order = sorted(range(len(num)), key=lambda k: num[k], reverse=True)  # 每个任务连接请求的最短路径按长度降序排列, 存储对应的任务请求序号
-    Path = copy.deepcopy(min_load_path)
+    Path = [[] for _ in range(len(num))]
     for i in range(len(order)):
         Path[i] = min_load_path[order[i]]
     Occupathions, LightPath, require = LFFP(order, Path, edges)
@@ -253,6 +254,7 @@ def MNH(tasks, edges):
 
 if __name__ == "__main__":
     random.seed(2)  # 设置随机种子
+    np.random.seed(2)
     wave_link_length = []  # 波长链路数
     times = []  # 时间
     wave_num = []  # 波长数
