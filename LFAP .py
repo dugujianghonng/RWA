@@ -126,7 +126,7 @@ def LFAP(tasks, edges, nodes):
             Graphs.append(Graph.copy())
             require.append([])
             w = w + 1
-        
+
     return Graphs, LightPath, require
 
 if __name__ == "__main__":
