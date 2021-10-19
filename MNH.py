@@ -1,22 +1,21 @@
 # -*- coding: utf-8 -*-
-import collections
+# Authors:   张, 刘剑锋
+"""
+实现MNH：在路由问题中进行局部搜索（利用最短路径不唯一这个特点）
+     路由问题：
+	首先为所有的连接请求都分配一个最短路径。
+	然后依次为连接请求重新分配最短路径，如果新的最短路径上链路的最大负载小于	之前的最短路径。
+	循环往复，直到寻找不到新的最短路径为止。
+    波长分配问题：
+	将路径按照递减顺序排列，依次为其分配波长。
 
+"""
+import collections
 import numpy as np
-import networkx as nx
-import pickle as cp
 import random
-import ctypes
-import os
-import sys
 import time
-import glob
-import re
-import math
-import matplotlib
 import copy
 
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 
 ## 表示无穷大
 INF_val = float("inf")
@@ -105,8 +104,7 @@ def Min_Load_Paths(tasks, edges):
          :return: min_load_path: 每个任务请求所对应的最小最大负载路径
     """
     tasks_num          = len(tasks)                         # 任务请求数量
-    weight_edges       = copy.deepcopy(edges)
-    weight_edges       = collections.Counter(weight_edges)  # 记录每条边的负载数
+    weight_edges       = []
     All_Shortest_paths = ALL_Shortest_Path(tasks, edges)    # 得到每个任务连接请求的所有最短路径,
     min_load_path      = []
     min_indexs          = []                                # 记录任务请求所分配路径的索引
@@ -119,8 +117,8 @@ def Min_Load_Paths(tasks, edges):
                 edge = (path[apk], path[apk + 1])
             else:
                 edge = (path[apk + 1], path[apk])
-            weight_edges[edge] += 1
-
+            weight_edges.append(edge)
+    weight_edges = collections.Counter(weight_edges)  # 记录每条边的负载数
     improvement = 0
     while True:
         old_improvement = improvement
@@ -265,7 +263,7 @@ if __name__ == "__main__":
     # 边连接关系
     Max_num_tasks = 200
 
-    for task_num in range(1,Max_num_tasks+1 ):
+    for task_num in range(1, Max_num_tasks+1 ):
 
         tasks = generator_task(task_num, node_nums)  # 生成任务
 

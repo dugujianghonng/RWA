@@ -42,9 +42,6 @@ def has_path(G, task):
         return False, None
     return True, path
 
-
-
-
 # 得到连接请求的最短路径, 并按照降序进行排列
 def Paths_order(tasks, G):
     """

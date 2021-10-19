@@ -28,7 +28,7 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../WeChat Files/wxid_h6uartayld3522/FileStorage/File/2021-09/复现" />
   </component>
-  <component name="RunManager" selected="Python.MNH">
+  <component name="RunManager" selected="Python.HPLD">
     <configuration name="BFD_RWA" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RWA" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -50,7 +50,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="FFD_RWA" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="HPLD" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RWA" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -62,7 +62,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/FFD_RWA.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/HPLD.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -71,7 +71,7 @@
       <option name="INPUT_FILE" value="" />
       <method v="2" />
     </configuration>
-    <configuration name="FF_RWA" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
+    <configuration name="LFAP " type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="RWA" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
@@ -83,7 +83,7 @@
       <option name="IS_MODULE_SDK" value="true" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
-      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/FF_RWA.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/LFAP .py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />
       <option name="EMULATE_TERMINAL" value="false" />
@@ -136,11 +136,11 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.MNH" />
-        <item itemvalue="Python.FFD_RWA" />
+        <item itemvalue="Python.HPLD" />
         <item itemvalue="Python.LFFP" />
+        <item itemvalue="Python.LFAP " />
+        <item itemvalue="Python.MNH" />
         <item itemvalue="Python.BFD_RWA" />
-        <item itemvalue="Python.FF_RWA" />
       </list>
     </recent_temporary>
   </component>
@@ -154,5 +154,16 @@
       <updated>1632965766095</updated>
     </task>
     <servers />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/MNH.py</url>
+          <line>252</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>
