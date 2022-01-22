@@ -150,10 +150,10 @@ def Min_Load_Paths(tasks, edges):
                   if load < min_load:
                      min_load  = load
                      min_index = j
-	if min_index != min_indexs[i]: #在循环之后再判断是否进行了修改，这样应该可以进一步提升运行速度？
-	    min_indexs[i] = min_index
-	    improvement += 1
-            path = All_Shortest_paths[i][min_index]
+	    if min_index != min_indexs[i]: #在循环之后再判断是否进行了修改，这样应该可以进一步提升运行速度？
+	        min_indexs[i] = min_index
+	        improvement += 1
+                path = All_Shortest_paths[i][min_index]
             for apk in range(len(path) - 1):  # 计算更新路径上每条边的负载数
                 if path[apk] < path[apk + 1]:
                     edge = (path[apk], path[apk + 1])
