@@ -35,6 +35,7 @@ def generator_task(task_num, node_nums):
     tasks_array = np.array(tasks)
     return tasks_array
 
+
 # 判断任务请求在图G中是否存在路径, 若存在返回对应路径
 def has_path(G, task):
     """
@@ -50,6 +51,7 @@ def has_path(G, task):
         return False, None
     return True, path
 
+
 # 连接请求根据结点排序得到连接请求顺序
 def ordering(nodes, tasks):
     """
@@ -58,16 +60,16 @@ def ordering(nodes, tasks):
     :return: order: 任务连接请求排列顺序
     """
     order = []
-    task_nums   = len(tasks)  # 任务数
-    task_index  = list(range(task_nums))  # 任务连接请求索引
-    node_nums   = len(nodes)  # 结点数量
-    node_index  = np.arange(node_nums)  # 存储每个结点在结点排列中的位置
+    task_nums = len(tasks)  # 任务数
+    task_index = list(range(task_nums))  # 任务连接请求索引
+    node_nums = len(nodes)  # 结点数量
+    node_index = np.arange(node_nums)  # 存储每个结点在结点排列中的位置
     for index in range(node_nums):
         node_index[nodes[index]] = index
     while len(order) != task_num:
         for i in nodes:
-            same_i         = []   # 存储起点相同的任务请求
-            task_end_index = []   # 存储起点相同的任务请求的终点在结点排列中的位置
+            same_i = []  # 存储起点相同的任务请求
+            task_end_index = []  # 存储起点相同的任务请求的终点在结点排列中的位置
             j = 0
             while j < len(task_index):
                 index = task_index[j]
@@ -79,11 +81,13 @@ def ordering(nodes, tasks):
                 else:
                     j += 1
             # 起点相同的任务请求根据终点在结点排列中的位置进行排序
-            end_index  = np.array(task_end_index)
-            sort_index = np.argsort(end_index)
-            for index in sort_index:
-                order.append(same_i[index])
+            for j in nodes:  # 应该按照nodes中的顺序排序，而不应该按照自然顺序
+                for k in task_end_index:
+                    if k == j:
+                        order.append(same_i[task_end_index.index(k)])
+                        break
     return order
+
 
 # 得到任务请求顺序对应的评价函数
 def Evaluation_function(order, tasks, edges, nodes):
@@ -95,12 +99,12 @@ def Evaluation_function(order, tasks, edges, nodes):
     :return:
     """
     LightPath = []  # 存储每个连接请求的路径及其对应的波长层
-    Graph = nx.DiGraph()
+    Graph = nx.Graph()
     for i in range(len(nodes)):
         Graph.add_node(nodes[i])
     for x, y in edges:  # edges::
         Graph.add_edges_from([(x, y)])
-        Graph.add_edges_from([(y, x)])
+
     Graphs = []
     Graphs.append(Graph.copy())
     load = [0]
@@ -109,7 +113,7 @@ def Evaluation_function(order, tasks, edges, nodes):
         task = tasks[id]
         w = 0
         for w in range(len(Graphs)):
-            G    = Graphs[w]
+            G = Graphs[w]
             exist_path, path = has_path(G, task)
             if exist_path:
                 load[w] = load[w] + len(path) - 1
@@ -118,7 +122,6 @@ def Evaluation_function(order, tasks, edges, nodes):
                 for apk in range(len(path) - 1):
                     e = (path[apk + 1], path[apk])
                     Graphs[w].remove_edge(e[0], e[1])
-                    Graphs[w].remove_edge(e[1], e[0])
                 break
 
         if can_rounte == False:
@@ -131,9 +134,9 @@ def Evaluation_function(order, tasks, edges, nodes):
             for apk in range(len(path) - 1):
                 e = (path[apk], path[apk + 1])
                 Graphs[-1].remove_edge(e[0], e[1])
-                Graphs[-1].remove_edge(e[1], e[0])
 
     return Graphs, LightPath, load
+
 
 # 禁忌搜索算法
 def RWA_Tabu(tasks, edges, nodes):
@@ -143,64 +146,66 @@ def RWA_Tabu(tasks, edges, nodes):
     :param          nodes: 结点序列
     :return:
     """
-    H = []         # 禁忌表
+    H = []  # 禁忌表
     opt_load = [INF_val]
     node_nums = len(nodes)  # 结点数量
-    cur_solution = list(nodes)    # 当前解向量
-    Neighbor = []     # 存储当前解向量的邻域解向量的索引
+    cur_solution = list(nodes)  # 当前解向量
+    Neighbor = []  # 存储当前解向量的邻域解向量的索引
     for i in range(node_nums - 1):
         for j in range(i + 1, node_nums):
-             Neighbor.append((i, j))
+            Neighbor.append((i, j))
     while True:
         while True:
-            loads_search     = []
-            Graphs_search    = []
+            loads_search = []
+            Graphs_search = []
             LightPath_search = []
             loads_sum_search = []
-            Neighbor_search  = []
+            Neighbor_search = []
             # 在当前解向量不在禁忌表中的领域解向量进行随机搜索
             cur_Neighbor = Neighbor.copy()  # 存储当前解向量的未检查邻域解向量的索引
             for k in range(10):
                 find = False
                 if len(cur_Neighbor) == 0:
                     break
-                item = random.choice(cur_Neighbor)  # 随机选择一个邻居结点
+                item_index = np.random.choice(range(len(cur_Neighbor)))  # 随机选择一个邻居结点，使用random会改变后面的问题实例
                 temp_solution = cur_solution.copy()
-                i, j = item
+                item = cur_Neighbor[item_index]  # 修改item
+                i,j=item
                 cur_Neighbor.remove(item)
                 temp_solution[i], temp_solution[j] = temp_solution[j], temp_solution[i]
-                while True: # 该邻居解在禁忌表中
+                while True:  # 该邻居解在禁忌表中
                     if temp_solution not in H:
                         find = True
                         break
+                    temp_solution[i], temp_solution[j] = temp_solution[j], temp_solution[i]  # 应该回滚为当前排序，而不是继续在修改后的排序中搜索
                     if len(cur_Neighbor) == 0:
                         break
-                    item = random.choice(cur_Neighbor)  # 随机选择一个邻居结点
+                    item_index = np.random.choice(range(len(cur_Neighbor)))  # 随机选择一个邻居结点，使用random会改变后面的问题实例
                     temp_solution = cur_solution.copy()
+                    item = cur_Neighbor[item_index]  # 修改item
                     i, j = item
                     cur_Neighbor.remove(item)
                     temp_solution[i], temp_solution[j] = temp_solution[j], temp_solution[i]
 
-
                 if find:
-                   H.append(temp_solution)
-                   order = ordering(temp_solution, tasks)
-                   Graphs, LightPath, load = Evaluation_function(order, tasks, edges, nodes)
-                   loads_search.append(load)
-                   Graphs_search.append(Graphs)
-                   LightPath_search.append(LightPath)
-                   loads_sum_search.append(sum(load))
-                   Neighbor_search.append(item)
+                    H.append(temp_solution)
+                    order = ordering(temp_solution, tasks)
+                    Graphs, LightPath, load = Evaluation_function(order, tasks, edges, nodes)
+                    loads_search.append(load)
+                    Graphs_search.append(Graphs)
+                    LightPath_search.append(LightPath)
+                    loads_sum_search.append(sum(load))
+                    Neighbor_search.append(item)
             if len(loads_sum_search) == 0:
                 break
             optimal = loads_sum_search.index(min(loads_sum_search))  # 局部搜索最佳解
-            load    = loads_search[optimal]
-            if sum(load) < sum(opt_load):   # 找到新的最优解
+            load = loads_search[optimal]
+            if sum(load) < sum(opt_load):  # 找到新的最优解
                 opt_G = Graphs_search[optimal]
                 opt_LightPath = LightPath_search[optimal]
                 opt_load = loads_search[optimal]
                 neighbor = Neighbor_search[optimal]
-                i, j     = neighbor
+                i, j = neighbor
                 cur_solution[i], cur_solution[j] = cur_solution[j], cur_solution[i]
 
         local_opt = True
@@ -253,7 +258,7 @@ if __name__ == "__main__":
         for i in range(len(LightPath)):
             ns = len(LightPath[i][0]) + ns - 1
         wave_link_length.append(ns)
-
+        print(ns)
         wave_num.append(len(Occupathions))
     print(wave_link_length)
     print(sum(wave_link_length))
