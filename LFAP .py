@@ -116,7 +116,7 @@ def LFAP(tasks, edges, nodes):
                     assign_task.append(task_index[order[iter]])
                 iter = iter + 1
             else:
-                break
+                iter = iter + 1  # 如果该任务请求不存在最短路径，应该去循环下一个任务请求，而不是终止循环
         if longest_path > 0:
             task_index = list(task_index)
             for task in assign_task:
