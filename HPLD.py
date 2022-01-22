@@ -188,7 +188,7 @@ def HPLD(tasks, edges, nodes):
                 num_load +=1
                 if max_load < edge_load[e]:
                     max_load = edge_load[e]
-        mean_load /= num_load
+        mean_load /= edge_num#分母应该为总边数
         deta = int(sigma * (max_load - mean_load))
         if deta == 0:
             return Occupathions, LightPath, require, reduce_wave
@@ -224,11 +224,12 @@ def HPLD(tasks, edges, nodes):
             return Occupathions, LightPath, require, reduce_wave
         else:
             not_change = True
-            while not_change:
-                if not Exist_Path:
-                    break
-                random_index = random.choice(Exist_Path)
+
+            while Exist_Path:
+                random_index_index = np.random.choice(range(len(Exist_Path)))
+                random_index=Exist_Path[random_index_index]
                 Exist_Path.remove(random_index)
+                # print(Exist_Path)
                 p = LightPath[random_index][0]  # 得到原路径
                 ori = LightPath[random_index][1]  # 得到原路径所在波长层
                 ori_edges = [] # 记录原路径的边
@@ -241,8 +242,10 @@ def HPLD(tasks, edges, nodes):
                     ori_edges.append(e)
                     edge_load[e] -= 1
                     Occupathions[ori][e] = False
-                    if len(require[ori]) == 1:
-                        reduce_wave.append(ori)
+                    # print(require,order,random_index)
+                require[ori].remove(order[random_index])
+                if len(require[ori]) == 0:
+                    reduce_wave.append(ori)
                 #计算新路径
                 path = nx.dijkstra_path(Graph, source=tasks[order[random_index]][0], target=tasks[order[random_index]][1])
                 Edge = []            # 存储新的路径
@@ -262,38 +265,21 @@ def HPLD(tasks, edges, nodes):
                             can_route = False
                             break
                     if can_route:
-                        require[ori].remove(order[random_index])
                         require[w].append(order[random_index])
                         LightPath[random_index] = (path, w)
                         for e in Edge:
                             Occupathions[w][e] = True
                             edge_load[e] += 1
-                            if e not in ori_edges:  # 判断新边是否出现在旧路径里
-                                not_change = False
-                        for e in ori_edges:
-                            if e not in Edge:  # 判断旧边是否出现在新路径里
-                                not_change = False
+                        not_change = False
                         break
                 if can_route == False:
-                    if ori in reduce_wave:
+                    for e in ori_edges:
+                        edge_load[e] += 1
+                        Occupathions[ori][e] = True
+                    require[ori].append(order[random_index])
+                    if len(require[ori]) == 1:
                         reduce_wave.remove(ori)
-                        LightPath[random_index] = (path, ori)
-                        for e in Edge:
-                            Occupathions[ori][e] = True
-                            edge_load[e] += 1
-                            if e not in ori_edges:  # 判断新边是否出现在旧路径里
-                                not_change = False
-                        for e in ori_edges:
-                            if e not in Edge:  # 判断旧边是否出现在新路径里
-                                not_change = False
-                    else:
-                        for apk in range(len(p) - 1):
-                            if p[apk] < p[apk + 1]:
-                                e = (p[apk], p[apk + 1])
-                            else:
-                                e = (p[apk + 1], p[apk])
-                            Occupathions[ori][e] = True
-                            edge_load[e] += 1
+
             if not_change:
                 return Occupathions, LightPath, require, reduce_wave
 
@@ -311,7 +297,7 @@ if __name__ == "__main__":
     # 边连接关系
     Max_num_tasks = 200
 
-    for task_num in range(200, Max_num_tasks + 1):
+    for task_num in range(1, Max_num_tasks + 1):
 
         tasks = generator_task(task_num, node_nums)  # 生成任务
 
