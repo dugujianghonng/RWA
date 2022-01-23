@@ -36,6 +36,7 @@ def generator_task(task_num, node_nums):
         tasks.append((task[0], task[1]))
     return tasks
 
+
 # 判断任务请求在图G中是否存在路径, 若存在返回对应路径
 def has_path(G, task):
     """
@@ -50,6 +51,7 @@ def has_path(G, task):
         return False, None
     return True, path
 
+
 # 得到连接请求的最短路径, 并按照降序进行排列
 def Paths_order(tasks, G):
     """
@@ -58,22 +60,23 @@ def Paths_order(tasks, G):
     :return: order: 任务连接请求按照最短路径的降序排列
              Paths: 每个任务连接请求的对应最短路径， 找不到路径的序对的路径为空
     """
-    num = []      # 存储每个连接请求的最短路径数值
-    Paths = []    # 存储每个连接请求的最短路径
+    num = []  # 存储每个连接请求的最短路径数值
+    Paths = []  # 存储每个连接请求的最短路径
     for task in tasks:
         exist_path, path = has_path(G, task)
         if exist_path:
-            num.append(len(path)-1)
+            num.append(len(path) - 1)
             Paths.append(path)
-        else:  #找不到最短路径
+        else:  # 找不到最短路径
             num.append(0)
             Paths.append([0])
-    order = sorted(range(len(num)), key=lambda k: num[k], reverse=True)  #每个连接请求的最短路径按长度降序排列, 存储对应的任务请求序号
+    order = sorted(range(len(num)), key=lambda k: num[k], reverse=True)  # 每个连接请求的最短路径按长度降序排列, 存储对应的任务请求序号
     Path = copy.deepcopy(Paths)
     for i in range(len(order)):
         Path[i] = Paths[order[i]]
 
     return order, Path
+
 
 # 判断加权图中是否存在路径
 def has_weight_path(G, task):
@@ -83,11 +86,13 @@ def has_weight_path(G, task):
        :return:  exist: 判断是否存在路径
     """
 
-    distance = nx.dijkstra_path_length(G, source=task[0], target=task[1], weight='weight')
-    if distance < INF_val:
-        return True
+    path = nx.shortest_path(G, source=task[0], target=task[1], weight='weight')
+    path_1 = nx.shortest_path_length(G, source=task[0], target=task[1], weight='weight')
+    if path_1 < INF_val:
+        return True, path
     else:
-        return False
+        return False, None
+
 
 def LFFP(tasks, edges, nodes):
     """
@@ -100,8 +105,8 @@ def LFFP(tasks, edges, nodes):
                   require: 存储每个波长层中的连接请求
     """
     can_route = True  # 标识路径在该波长层中是否存在
-    w = 0             # 标识波长层序号
-    LightPath = []    # 存储每个连接请求的路径及其对应的波长层
+    w = 0  # 标识波长层序号
+    LightPath = []  # 存储每个连接请求的路径及其对应的波长层
 
     Graphs = []
     Graph = nx.Graph()
@@ -151,6 +156,7 @@ def LFFP(tasks, edges, nodes):
 
     return Occupathions, LightPath, order, require
 
+
 def HPLD(tasks, edges, nodes):
     """
         :param          tasks: 任务请求序列
@@ -160,11 +166,11 @@ def HPLD(tasks, edges, nodes):
                     LightPath: 存储每条路径所及其所对应的波长
                       require: 存储每个波长层中的连接请求
     """
-    Occupathions, LightPath, order, require = LFFP(tasks, edges, nodes) #利用LFFP分配路径
+    Occupathions, LightPath, order, require = LFFP(tasks, edges, nodes)  # 利用LFFP分配路径
     task_num = len(tasks)  # 任务数量
     edge_num = len(edges)  # 边数量
-    reduce_wave = []       # 存储被简化的波长层
-    sigma    = 1
+    reduce_wave = []  # 存储被简化的波长层
+    sigma = 1
     edges_cost = {}
     edge_load = {}
     for e in edges:
@@ -187,10 +193,10 @@ def HPLD(tasks, edges, nodes):
         for e in edge_load:
             if edge_load[e] > 0:
                 mean_load += edge_load[e]
-                num_load +=1
+                num_load += 1
                 if max_load < edge_load[e]:
                     max_load = edge_load[e]
-        mean_load /= edge_num#分母应该为总边数
+        mean_load /= edge_num  # 分母应该为总边数
         deta = int(sigma * (max_load - mean_load))
         if deta == 0:
             return Occupathions, LightPath, require, reduce_wave
@@ -199,7 +205,7 @@ def HPLD(tasks, edges, nodes):
                 edges_cost[e] = 1 / (max_load - 1 - edge_load[e])
             else:
                 edges_cost[e] = INF_val
-        Max_Load_Path_index = [] #记录最大负载路径的索引
+        Max_Load_Path_index = []  # 记录最大负载路径的索引
         for i in range(task_num):
             path = LightPath[i][0]
             for apk in range(len(path) - 1):
@@ -219,23 +225,22 @@ def HPLD(tasks, edges, nodes):
 
         Exist_Path = []
         for path_idx in Max_Load_Path_index:
-            exist_path = has_weight_path(Graph, tasks[order[path_idx]])
+            exist_path, haspath = has_weight_path(Graph, tasks[order[path_idx]])
             if exist_path:
-                Exist_Path.append(path_idx)
+                Exist_Path.append((path_idx, haspath))
         if not Exist_Path:
             return Occupathions, LightPath, require, reduce_wave
         else:
             not_change = True
-
-            while Exist_Path:
+            while Exist_Path and not_change:
                 random_index_index = np.random.choice(range(len(Exist_Path)))
-                random_index=Exist_Path[random_index_index]
+                random_index = Exist_Path[random_index_index]
                 Exist_Path.remove(random_index)
                 # print(Exist_Path)
-                p = LightPath[random_index][0]  # 得到原路径
-                ori = LightPath[random_index][1]  # 得到原路径所在波长层
-                ori_edges = [] # 记录原路径的边
-                #移除原路径
+                p = LightPath[random_index[0]][0]  # 得到原路径
+                ori = LightPath[random_index[0]][1]  # 得到原路径所在波长层
+                ori_edges = []  # 记录原路径的边
+                # 移除原路径
                 for apk in range(len(p) - 1):
                     if p[apk] < p[apk + 1]:
                         e = (p[apk], p[apk + 1])
@@ -245,12 +250,12 @@ def HPLD(tasks, edges, nodes):
                     edge_load[e] -= 1
                     Occupathions[ori][e] = False
                     # print(require,order,random_index)
-                require[ori].remove(order[random_index])
+                require[ori].remove(order[random_index[0]])
                 if len(require[ori]) == 0:
                     reduce_wave.append(ori)
-                #计算新路径
-                path = nx.dijkstra_path(Graph, source=tasks[order[random_index]][0], target=tasks[order[random_index]][1])
-                Edge = []            # 存储新的路径
+                # 计算新路径
+                path = random_index[1]
+                Edge = []  # 存储新的路径
                 for apk in range(len(path) - 1):
                     if path[apk] < path[apk + 1]:
                         edge = (path[apk], path[apk + 1])
@@ -267,8 +272,8 @@ def HPLD(tasks, edges, nodes):
                             can_route = False
                             break
                     if can_route:
-                        require[w].append(order[random_index])
-                        LightPath[random_index] = (path, w)
+                        require[w].append(order[random_index[0]])
+                        LightPath[random_index[0]] = (path, w)
                         for e in Edge:
                             Occupathions[w][e] = True
                             edge_load[e] += 1
@@ -278,14 +283,12 @@ def HPLD(tasks, edges, nodes):
                     for e in ori_edges:
                         edge_load[e] += 1
                         Occupathions[ori][e] = True
-                    require[ori].append(order[random_index])
+                    require[ori].append(order[random_index[0]])
                     if len(require[ori]) == 1:
                         reduce_wave.remove(ori)
-
             if not_change:
                 return Occupathions, LightPath, require, reduce_wave
     return Occupathions, LightPath, require, reduce_wave
-
 
 
 if __name__ == "__main__":
