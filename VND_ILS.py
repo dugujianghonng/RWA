@@ -134,7 +134,8 @@ def ils(orders, taskss, Graphss, loads, nodess, LightPaths, requires, lambda_t):
     for w in range(len(Graphs)):
         if w == lambda_t:
             continue
-        r = random.choice(require[w])  # 随机选一个任务连接请求
+        # 随机选一个任务连接请求
+        r = list(np.random.choice(require[w], 1, replace=False))[0]
         path = LightPath[order.index(r)][0]
         R.append((r, w))
         for apk in range(len(path) - 1):
@@ -143,10 +144,10 @@ def ils(orders, taskss, Graphss, loads, nodess, LightPaths, requires, lambda_t):
             Graphs[w].add_edges_from([(e[1], e[0])])
         require[w].remove(r)
         load[w] = load[w] - len(path) + 1
-    random.shuffle(R)
+    R_index = list(np.random.choice(range(len(R)), len(R), replace=False))
     change = False
-    for item in R:
-        id, wave = item
+    for item in R_index:
+        id, wave = R[item]
         for w in range(len(Graphs)):
             if w == lambda_t:
                 continue
@@ -154,7 +155,7 @@ def ils(orders, taskss, Graphss, loads, nodess, LightPaths, requires, lambda_t):
             task = tasks[id]
             exist_path, path = has_path(G, task)
             if exist_path:
-                if wave != w:
+                if LightPath[order.index(id)][0] != path or wave!=w:#同一层中不同路径也应该是进行了改变
                     change =True
                 load[w] = load[w] + len(path) - 1
                 LightPath[order.index(id)] = (path, w)
@@ -385,7 +386,6 @@ if __name__ == "__main__":
         for i in range(len(LightPath)):
             ns = len(LightPath[i][0]) + ns - 1
         wave_link_length.append(ns)
-
         wave_num.append(len(Occupathions))
     print(wave_link_length)
     print(sum(wave_link_length))
