@@ -191,7 +191,7 @@ def Mutate(order, tasks, Graphs, require, load, reduce_wave, LightPath, nodes, e
     if load[w_1] < load[w_2]:
         w_1, w_2 = w_2, w_1
     r_2 = require[w_2]  # 链路较少的波长层中的连接请求
-    out_path_index = random.choice(r_2)  # 在链路较少的波长层中随机选择一个连接请求
+    out_path_index = np.random.choice(r_2)  # 在链路较少的波长层中随机选择一个连接请求
     out_index = order.index(out_path_index)
     out_path = LightPath[out_index][0]     # 所选择连接请求的路径
     out_edge = {}  # 存储所选择连接请求的路径中的边
