@@ -177,7 +177,9 @@ def HPLD(tasks, edges, nodes):
             else:
                 edge = (path[apk + 1], path[apk])
             edge_load[edge] += 1
-    while True:
+    leiji = [] #防止出现循环
+    while LightPath not in leiji:
+        leiji.append(LightPath[:])
         # 负载偏差量的确定
         mean_load = 0
         max_load = 0
@@ -282,6 +284,7 @@ def HPLD(tasks, edges, nodes):
 
             if not_change:
                 return Occupathions, LightPath, require, reduce_wave
+    return Occupathions, LightPath, require, reduce_wave
 
 
 
@@ -306,7 +309,7 @@ if __name__ == "__main__":
         Occupathions, LightPath, require, reduce_wave = HPLD(tasks, edges, nodes)
 
         end_time = time.time()  # 求解终止时间
-        # print(end_time, start_time)
+        print(end_time, start_time)
         times.append(end_time - start_time)
         ns = 0
         for i in range(len(LightPath)):
